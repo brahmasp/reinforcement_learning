@@ -46,9 +46,12 @@ def greedy(state, q_values):
 
 def q_learn(env, num_states, num_actions, discount = 0.99):
 
-	num_episodes = 75000
-	eps = 0.8
-	decay_rate = 0.99
+	# 100k -> 73.1%
+	# 10k ~ 73%
+	num_episodes = 10000
+	eps = 1
+	decay_rate = 0.9
+	min_learning_rate = 0.001
 
 	# Table of q values
 	# q[state][action] corresponds to total return if action was taken at state
@@ -67,6 +70,8 @@ def q_learn(env, num_states, num_actions, discount = 0.99):
 			q_values_counts[state][action] += 1
 			current_state = state
 			learning_rate =  1.0 / q_values_counts[state][action]
+			if learning_rate < min_learning_rate:
+				learning_rate = min_learning_rate
 
 			state, reward, done, _ = env.step(action)
 
@@ -74,10 +79,10 @@ def q_learn(env, num_states, num_actions, discount = 0.99):
 			q_values[current_state][action] = current_q_value + (learning_rate) * (reward + discount * q_values[state][off_policy_max_action] - current_q_value)
 			
 			if done:
-				print ("finished episode")
+				print ("finished episode {}".format(i_episode + 1))
 				break
-
-
+		if i_episode % 5000 == 0:
+			eps *= 1
 
 	print(q_values)
 	return q_values
@@ -117,7 +122,7 @@ def sample_env(env, policy):
 def main():
 
 	env_list = ['Deterministic-4x4-FrozenLake-v0', 'FrozenLake-v0', 'Deterministic-8x8-FrozenLake-v0', 'FrozenLake8x8-v0']
-	env_list = [].append(env_list[2])
+	env_list = [env_list[1]]
 	
 	for env_item in env_list:
 		env = gym.make(env_item)
