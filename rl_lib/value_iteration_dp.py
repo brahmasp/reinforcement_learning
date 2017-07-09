@@ -52,6 +52,11 @@ def init_trans_rewards(num_states, num_actions):
 
 	return [[[0 for _ in range (num_states)] for _ in range(num_actions)] for _ in range(num_states)]
 
+
+"""
+Get overall model (P) from the transition counts and rewards
+
+"""
 def get_model_from_experience(trans_counts, trans_rewards):
 
 	# Create empty model - for a given pair of state and action there is a
@@ -81,6 +86,7 @@ These updates to trans_counts, trans_rewards will be used to form
 final model using "get_model_from_experience"
 
 hist is a list  [state, action, reward, next_state, done]
+This list is per episode basis
 
 index corresponds
 0 to state
@@ -109,10 +115,14 @@ def update_experience(trans_counts, trans_rewards, hist):
 			# Terminal state can be success or failure
 			# Set the reward of that state accordingly
 			for a in range(num_actions):
-				trans_counts[next_state][a][next_state] += 1
-				count = trans_counts[next_state][a][next_state]
-				curr_reward = trans_rewards[next_state][a][next_state]
-				trans_rewards[next_state][action][next_state] = curr_reward + (1.0 / count)*(reward - curr_reward)
+				trans_counts[next_state][a][next_state] = 1
+				trans_rewards[next_state][a][next_state] = 0
+				# trans_counts[next_state][a][next_state] += 1
+				# count = trans_counts[next_state][a][next_state]
+				# curr_reward = trans_rewards[next_state][a][next_state]
+
+				# # Calculating average
+				# trans_rewards[next_state][action][next_state] = curr_reward + (1.0 / count)*(reward - curr_reward)
 
 	return trans_counts, trans_rewards
 
@@ -128,6 +138,7 @@ def construct_model(env, num_states, num_actions, num_episodes = 50000):
 		# some init state 
 		state = env.reset()
 
+		# list of all individual experiences in a given episode
 		hist = []
 		while True:
 			sub_hist = []
@@ -167,6 +178,10 @@ def construct_model(env, num_states, num_actions, num_episodes = 50000):
 
 	return value_iterate(P, num_states, num_actions)
 
+"""
+After value iteration converges, time to extract the policy
+
+"""
 def policy_extraction(P, num_states, num_actions, V, policy, discount = 0.99):
 
 	for s in range(num_states):
@@ -178,17 +193,21 @@ def policy_extraction(P, num_states, num_actions, V, policy, discount = 0.99):
 
 				# relevant only if possible to go this next state
 				# so probability is not zero
+				# Given an action how much value does it give
+				# collect all these values
+				# find the max value. thats where we want to go
+				# index of max corresponds to desired action
 				if next_s[0] != 0:
 					value += next_s[0] * (next_s[2] + discount * V[next_s[1]])
 			q.append(value)
 
 		policy[s] = np.argmax(q)
-		
-
 	return policy
 			
 
-
+"""
+Performing value iteration
+"""
 def value_iterate(P, num_states, num_actions, discount = 0.99):
 
 	V = np.zeros((1, num_states))[0]
@@ -217,7 +236,9 @@ def value_iterate(P, num_states, num_actions, discount = 0.99):
 	return V, policy
 
 		
-
+"""
+Sample run to test out any policy (optimal, random etc)
+"""
 def sample_env(file, env, V, policy, random = False):
 
 	# Timesteps in a given epsiode
@@ -251,6 +272,11 @@ def sample_env(file, env, V, policy, random = False):
 3 -> up
 """
 def main():
+	# Success rates in order
+	# 100%
+	# 100%
+	# 74.8%
+	# 86.9%
 	env_list = ['Deterministic-4x4-FrozenLake-v0', 'Deterministic-8x8-FrozenLake-v0', 'FrozenLake-v0', 'FrozenLake8x8-v0']
 
 	
@@ -260,7 +286,6 @@ def main():
 		num_actions = env.action_space.n
 		V, policy = construct_model(env, num_states, num_actions)
 		sample_env(file, env, V, policy)
-
 		# uncomment below to for random action
 		#sample_env(file, env, V, policy, True)
 
