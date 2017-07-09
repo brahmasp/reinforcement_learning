@@ -180,11 +180,17 @@ def init_value_function(num_states):
 	# size of number of states
 	return np.zeros((1, num_states))[0]
 
+def policy_extraction(P, num_states, num_actions, V):
+	return
+			
+
+
 def value_iterate(P, num_states, num_actions, discount = 0.95):
 
 	V = init_value_function(num_states);
+	policy = np.zeros((1, num_states))[0]
 	print("Before value iteration {}".format(V))
-	for _ in range (10000):
+	for _ in range (1000):
 		for s in range(num_states):
 			v = V[s];
 			q = []
@@ -197,9 +203,13 @@ def value_iterate(P, num_states, num_actions, discount = 0.95):
 					value += next_s[0] * (next_s[2] + discount * V[next_s[1]])
 				q.append(value)
 			V[s] = max(q);
+			policy[s] = np.argmax(q)
 
 	V = np.reshape(V, (4,4))
-	print("After value iteration \n{}".format(V))	
+	policy = np.reshape(policy, (4,4))
+	print("After value iteration \n{}".format(V))
+	print("Optimal policy \n{}".format(policy))
+		
 
 def sample_env(env):
 	# Number of epsiodes
