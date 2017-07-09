@@ -167,7 +167,7 @@ def construct_model(env, num_states, num_actions, num_episodes = 50000):
 
 	return value_iterate(P, num_states, num_actions)
 
-def policy_extraction(P, num_states, num_actions, V, policy, discount = 0.95):
+def policy_extraction(P, num_states, num_actions, V, policy, discount = 0.99):
 
 	for s in range(num_states):
 		q = []
