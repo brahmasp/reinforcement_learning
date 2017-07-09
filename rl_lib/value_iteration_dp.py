@@ -1,6 +1,7 @@
 import gym
 import numpy as np
 import time
+from lake_envs import *
 
 """
 General idea of DP solution
@@ -180,10 +181,7 @@ def policy_extraction(P, num_states, num_actions, V, policy, discount = 0.95):
 				if next_s[0] != 0:
 					value += next_s[0] * (next_s[2] + discount * V[next_s[1]])
 			q.append(value)
-					#print("value of state {} is {}\n".format(next_s[1], V[next_s[1]]))
-			print(q)
 
-		print("max value from this {} state {}".format(s, max(q)))
 		policy[s] = np.argmax(q)
 		
 
@@ -195,7 +193,7 @@ def value_iterate(P, num_states, num_actions, discount = 0.99):
 
 	V = np.zeros((1, num_states))[0]
 	policy = [-1 for _ in range(num_states)]
-	print("Before value iteration {}".format(V))
+
 	for _ in range (2500):
 		for s in range(num_states):
 			v = V[s];
@@ -220,9 +218,8 @@ def value_iterate(P, num_states, num_actions, discount = 0.99):
 
 		
 
-def sample_env(env, V, policy):
+def sample_env(file, env, V, policy, random = False):
 
-	print("\nBEGINNING ACTUAL GAME PLAY\n");
 	# Timesteps in a given epsiode
 	# Can use while True: till the very end of the episode
 	goal_reached = 0;
@@ -232,7 +229,11 @@ def sample_env(env, V, policy):
 		state = env.reset();
 		while True:
 			env.render()
-			action = policy[state]
+			if random:
+				action = env.action_space.sample()
+			else:
+				action = policy[state]
+			
 			state, reward, done, _ = env.step(action)
 			if done:
 				if reward != 0:
@@ -241,25 +242,8 @@ def sample_env(env, V, policy):
 				break
 
 
-	# policy = np.reshape(policy, (4,4))
-	# V = np.reshape(V, (4,4))
-	# print("Value function: \n{}".format(V))
-	# print("Policy: \n{}".format(policy))
-	print("Goal reached: {} times".format(goal_reached))
-	print("Goal reached: {}%".format(float(goal_reached) / number_of_episodes))
-
-
-def temp(env):
-
-	state = env.reset()
-	while True:
-		env.render()
-		action = env.action_space.sample()
-		print("taking action {}".format(action));
-		state, reward, done, _ = env.step(action)
-		if done:
-			print("done")
-			break;
+	result_string = "Goal reached: {}%".format(float(goal_reached * 100.0) / number_of_episodes)
+	print(result_string)
 """
 0 -> left
 1 -> down
@@ -267,14 +251,18 @@ def temp(env):
 3 -> up
 """
 def main():
-	env = gym.make('FrozenLake8x8-v0')
-	num_states = env.observation_space.n
-	num_actions = env.action_space.n
-	V, policy = construct_model(env, num_states, num_actions)
+	env_list = ['Deterministic-4x4-FrozenLake-v0', 'Deterministic-8x8-FrozenLake-v0', 'FrozenLake-v0', 'FrozenLake8x8-v0']
 
-	sample_env(env, V, policy)
-	#temp(env)
+	
+	for env_item in env_list:
+		env = gym.make(env_item)
+		num_states = env.observation_space.n
+		num_actions = env.action_space.n
+		V, policy = construct_model(env, num_states, num_actions)
+		sample_env(file, env, V, policy)
 
+		# uncomment below to for random action
+		#sample_env(file, env, V, policy, True)
 
 
 if __name__ == '__main__':
