@@ -1,6 +1,7 @@
 import numpy as np
 import gym
 from lake_envs import *
+import time
 
 """
 Agent is a tabular Q-learner
@@ -25,7 +26,7 @@ This is the optimal policy (hopefully)
 
 """
 
-def epsilon_greedy(env, state, q_values, eps = 0.8, decay_rate = 0.99):
+def epsilon_greedy(env, state, q_values, eps):
 
 	p = np.random.random()
 
@@ -43,15 +44,17 @@ def greedy(state, q_values):
 	return action
 
 
-def q_learn(env, num_states, num_actions):
+def q_learn(env, num_states, num_actions, discount = 0.99):
 
-	num_episodes = 5000
-	learning_rate = 0.2
+	num_episodes = 15000
+	eps = 0.8
+	decay_rate = 0.99
 
 	# Table of q values
 	# q[state][action] corresponds to total return if action was taken at state
 	# and then policy was followed
 	q_values = np.random.rand(num_states, num_actions)
+	q_values_counts = np.zeros((num_states, num_actions))
 	
 
 	for i_episode in range(num_episodes):
@@ -60,12 +63,12 @@ def q_learn(env, num_states, num_actions):
 		while True:
 			env.render()
 
-			action = epsilon_greedy(env, state, q_values)
+			action = epsilon_greedy(env, state, q_values, eps)
 			current_q_value = q_values[state][action]
+			q_values_counts[state][action] += 1
+			learning_rate =  1.0 / q_values_counts[state][action]
 
 			state, reward, done, _ = env.step(action)
-
-
 
 			if done:
 				# Terminal state
@@ -74,15 +77,19 @@ def q_learn(env, num_states, num_actions):
 				break
 			else:
 				off_policy_max_action = greedy(state, q_values)
-				q_values[state][action] = current_q_value + (learning_rate) * (reward + q_values[state][off_policy_max_action] - current_q_value)
-	#print(q_values)
+				q_values[state][action] = current_q_value + (learning_rate) * (reward + discount * q_values[state][off_policy_max_action] - current_q_value)
+
+	print(q_values)
 	return q_values
 
 def policy_extraction(q_values, num_states, num_actions):
 	
 	policy = [-1 for _ in range(num_states)]
 
+
 	for state in range(num_states):
+
+		print("state {} and value {}".format(state + 1,max(q_values[state])))
 		policy[state] = np.argmax(q_values[state])
 
 	return policy
@@ -119,7 +126,7 @@ def main():
 		q_values = q_learn(env, num_states, num_actions)
 		policy = policy_extraction(q_values, num_states, num_actions)
 
-		sample_env(env, policy)
+		#sample_env(env, policy)
 
 		# uncomment below to for random action
 		#sample_env(file, env, V, policy, True)
