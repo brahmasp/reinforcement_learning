@@ -1,5 +1,6 @@
 import gym
 import numpy as np
+import time
 
 """
 General idea of DP solution
@@ -41,6 +42,11 @@ def init_trans_counts(num_states, num_actions):
 	
 	return [[[0 for _ in range(num_states)] for _ in range(num_actions)] for _ in range(num_states)]
 
+"""
+trans_rewards[state][action][next_state] is reward received for the transition 
+from state to next_state after taking action 
+
+"""
 def init_trans_rewards(num_states, num_actions):
 
 	return [[[0 for _ in range (num_states)] for _ in range(num_actions)] for _ in range(num_states)]
@@ -67,7 +73,93 @@ def get_model_from_experience(trans_counts, trans_rewards):
 				P[state][action].append(t);
 	return P;
 
+"""
+As experience/episodes go on, want to update trans_counts, trans_rewards
+as needed.
+These updates to trans_counts, trans_rewards will be used to form 
+final model using "get_model_from_experience"
 
+hist is a list  [state, action, reward, next_state, done]
+
+index corresponds
+0 to state
+1 to action
+and so on
+"""
+def update_experience(trans_counts, trans_rewards, hist):
+
+	num_actions = len(trans_counts[0])
+	for state, action, reward, next_state, done in hist:
+
+		# Work for the terminal state if we have reached it
+		# otherwise proceed as normal
+
+		# This type of transition was experienced
+		trans_counts[state][action][next_state] += 1;
+		curr_reward = trans_rewards[state][action][next_state]
+		count = trans_counts[state][action][next_state]
+
+		# Incremental mean
+		# A <- A + k * (reward - A)
+		# where k = 1 / count
+		trans_rewards[state][action][next_state] = curr_reward + (1.0 / count)*(reward - curr_reward)
+
+		if done:
+			for a in range(num_actions):
+				trans_counts[next_state][a][next_state] = 1
+				trans_rewards[next_state][a][next_state] = 0
+	return trans_counts, trans_rewards
+
+def construct_model(env, num_states, num_actions, num_episodes = 1):
+
+	P = init_model(num_states, num_actions)
+	trans_counts = init_trans_counts(num_states, num_actions)
+	trans_rewards = init_trans_rewards(num_states, num_actions)
+
+	for i_episode in range(num_episodes):
+
+		# some init state 
+		state = env.reset()
+
+		hist = []
+		while True:
+			sub_hist = []
+			env.render()
+
+			action = env.action_space.sample()
+
+			# init state
+			sub_hist.append(state)
+
+			# action chosen
+			sub_hist.append(action)
+
+			state, reward, done, _ = env.step(action)
+			# reward received
+			sub_hist.append(reward)
+
+			# next_state
+			sub_hist.append(state)
+
+			# terminal state or not
+			sub_hist.append(done)
+
+			# keep track of this experience in the history list
+			hist.append(sub_hist)
+			if done:
+				print "Finished episode {} and state {}".format(i_episode + 1, state);
+				break;
+
+		# for each episode, we collect the history
+		# consume this history and keep track of it all to use when building
+		# model of environment
+		trans_counts, trans_rewards = update_experience(trans_counts, trans_rewards, hist)
+
+	print (trans_counts)
+	print("\n");
+	print (trans_rewards)
+
+	# get_model_from_experience(trans_counts, trans_rewards)
 
 def sample_env(env):
 	# Number of epsiodes
@@ -90,10 +182,9 @@ def main():
 	env = gym.make('FrozenLake-v0')
 	num_states = env.observation_space.n
 	num_actions = env.action_space.n
-	P = init_model(num_states, num_actions)
-	trans_counts = init_trans_counts(num_states, num_actions)
-	trans_rewards = init_trans_rewards(num_states, num_actions)
-	get_model_from_experience(trans_counts, trans_rewards)
+	construct_model(env, num_states, num_actions)
+
+
 
 if __name__ == '__main__':
 	main();
