@@ -105,9 +105,11 @@ def update_experience(trans_counts, trans_rewards, hist):
 		trans_rewards[state][action][next_state] = curr_reward + (1.0 / count)*(reward - curr_reward)
 
 		if done:
+			# Terminal state can be success or failure
+			# Set the reward of that state accordingly
 			for a in range(num_actions):
 				trans_counts[next_state][a][next_state] = 1
-				trans_rewards[next_state][a][next_state] = 0
+				trans_rewards[next_state][a][next_state] = reward
 	return trans_counts, trans_rewards
 
 def construct_model(env, num_states, num_actions, num_episodes = 5000):
@@ -158,37 +160,34 @@ def construct_model(env, num_states, num_actions, num_episodes = 5000):
 		trans_counts, trans_rewards = update_experience(trans_counts, trans_rewards, hist)
 
 	P = get_model_from_experience(trans_counts, trans_rewards)
-	# for t in term_states:
-	# 	for a in range(num_actions):
-	# 		if P[t][a][t][2] != 0:
-	# 			print P[t][a][t];
-	value_iterate(P, num_states, num_actions)
 
-def eps_greedy_policy(env, action, eps = 0.1):
+	return value_iterate(P, num_states, num_actions)
 
-	p = np.random.random()
+def policy_extraction(P, num_states, num_actions, V, policy):
 
-	if p <= eps:
-		return env.action_space.sample()
-	else:
-		return action
+	for s in range(num_states):
+		q = []
+		for a in range(num_actions):
+			next_states = P[s][a]
+			temp = []
+			for next_s in next_states:
+
+				value_next_state = V[next_s[1]]
+				temp.append(value_next_state)
+			q.append(max(temp))
+
+		policy[s] = q.index(max(q))
 
 
-def init_value_function(num_states):
-	
-	# Return row vector of all zeros 
-	# size of number of states
-	return np.zeros((1, num_states))[0]
 
-def policy_extraction(P, num_states, num_actions, V):
-	return
+	return policy
 			
 
 
 def value_iterate(P, num_states, num_actions, discount = 0.95):
 
-	V = init_value_function(num_states);
-	policy = np.zeros((1, num_states))[0]
+	V = np.zeros((1, num_states))[0]
+	policy = [-1 for _ in range(num_states)]
 	print("Before value iteration {}".format(V))
 	for _ in range (1000):
 		for s in range(num_states):
@@ -203,36 +202,61 @@ def value_iterate(P, num_states, num_actions, discount = 0.95):
 					value += next_s[0] * (next_s[2] + discount * V[next_s[1]])
 				q.append(value)
 			V[s] = max(q);
-			policy[s] = np.argmax(q)
+			#policy[s] = int(np.argmax(q))
 
-	V = np.reshape(V, (4,4))
-	policy = np.reshape(policy, (4,4))
-	print("After value iteration \n{}".format(V))
-	print("Optimal policy \n{}".format(policy))
+	policy = policy_extraction(P, num_states, num_actions, V, policy)
+	# V = np.reshape(V, (8,8))
+	# policy = np.reshape(policy, (8,8))
+	# print("After value iteration \n{}".format(V))
+	# print("Optimal policy \n{}".format(policy))
+	
+	return V, policy
+
 		
 
-def sample_env(env):
-	# Number of epsiodes
-	for i_episode in range(20):
-		observation = env.reset()
+def sample_env(env, V, policy):
 
-		# Timesteps in a given epsiode
-		# Can use while True: till the very end of the episode
-		for t in range(100):
-			env.render()
-			action = env.action_space.sample()
-			observation, reward, done, info = env.step(action)
-			print (observation)
-			if done:
-				print("Episode finished after {} timesteps".format(t+1))
-				break;
+	print("\nBEGINNING ACTUAL GAME PLAY\n");
+	# Timesteps in a given epsiode
+	# Can use while True: till the very end of the episode
+	# state = env.reset();
+	# while True:
+	# 	env.render()
+	# 	action = policy[state]
+	# 	state, reward, done, _ = env.step(action)
+	# 	if done:
+	# 		print("episode terminated, reached state {}".format(state))
+	# 		break
+	policy = np.reshape(policy, (4,4))
+	V = np.reshape(V, (4,4))
+	print("Value function: \n{}".format(V))
+	print("Policy: \n{}".format(policy))
 
+def temp(env):
 
+	state = env.reset()
+	while True:
+		env.render()
+		action = env.action_space.sample()
+		print("taking action {}".format(action));
+		state, reward, done, _ = env.step(action)
+		if done:
+			print("done")
+			break;
+"""
+0 -> left
+1 -> down
+2 -> right
+3 -> up
+"""
 def main():
 	env = gym.make('FrozenLake-v0')
 	num_states = env.observation_space.n
 	num_actions = env.action_space.n
-	construct_model(env, num_states, num_actions)
+	V, policy = construct_model(env, num_states, num_actions)
+
+	sample_env(env, V, policy)
+	#temp(env)
 
 
 
