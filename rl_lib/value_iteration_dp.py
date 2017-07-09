@@ -108,11 +108,14 @@ def update_experience(trans_counts, trans_rewards, hist):
 			# Terminal state can be success or failure
 			# Set the reward of that state accordingly
 			for a in range(num_actions):
-				trans_counts[next_state][a][next_state] = 1
-				trans_rewards[next_state][a][next_state] = reward
+				trans_counts[next_state][a][next_state] += 1
+				count = trans_counts[next_state][a][next_state]
+				curr_reward = trans_rewards[next_state][a][next_state]
+				trans_rewards[next_state][action][next_state] = curr_reward + (1.0 / count)*(reward - curr_reward)
+
 	return trans_counts, trans_rewards
 
-def construct_model(env, num_states, num_actions, num_episodes = 5000):
+def construct_model(env, num_states, num_actions, num_episodes = 50000):
 
 	P = init_model(num_states, num_actions)
 	trans_counts = init_trans_counts(num_states, num_actions)
@@ -163,33 +166,37 @@ def construct_model(env, num_states, num_actions, num_episodes = 5000):
 
 	return value_iterate(P, num_states, num_actions)
 
-def policy_extraction(P, num_states, num_actions, V, policy):
+def policy_extraction(P, num_states, num_actions, V, policy, discount = 0.95):
 
 	for s in range(num_states):
 		q = []
 		for a in range(num_actions):
 			next_states = P[s][a]
-			temp = []
+			value = 0
 			for next_s in next_states:
 
-				value_next_state = V[next_s[1]]
-				temp.append(value_next_state)
-			q.append(max(temp))
+				# relevant only if possible to go this next state
+				# so probability is not zero
+				if next_s[0] != 0:
+					value += next_s[0] * (next_s[2] + discount * V[next_s[1]])
+			q.append(value)
+					#print("value of state {} is {}\n".format(next_s[1], V[next_s[1]]))
+			print(q)
 
-		policy[s] = q.index(max(q))
-
-
+		print("max value from this {} state {}".format(s, max(q)))
+		policy[s] = np.argmax(q)
+		
 
 	return policy
 			
 
 
-def value_iterate(P, num_states, num_actions, discount = 0.95):
+def value_iterate(P, num_states, num_actions, discount = 0.99):
 
 	V = np.zeros((1, num_states))[0]
 	policy = [-1 for _ in range(num_states)]
 	print("Before value iteration {}".format(V))
-	for _ in range (1000):
+	for _ in range (2500):
 		for s in range(num_states):
 			v = V[s];
 			q = []
@@ -202,7 +209,6 @@ def value_iterate(P, num_states, num_actions, discount = 0.95):
 					value += next_s[0] * (next_s[2] + discount * V[next_s[1]])
 				q.append(value)
 			V[s] = max(q);
-			#policy[s] = int(np.argmax(q))
 
 	policy = policy_extraction(P, num_states, num_actions, V, policy)
 	# V = np.reshape(V, (8,8))
@@ -219,18 +225,29 @@ def sample_env(env, V, policy):
 	print("\nBEGINNING ACTUAL GAME PLAY\n");
 	# Timesteps in a given epsiode
 	# Can use while True: till the very end of the episode
-	# state = env.reset();
-	# while True:
-	# 	env.render()
-	# 	action = policy[state]
-	# 	state, reward, done, _ = env.step(action)
-	# 	if done:
-	# 		print("episode terminated, reached state {}".format(state))
-	# 		break
-	policy = np.reshape(policy, (4,4))
-	V = np.reshape(V, (4,4))
-	print("Value function: \n{}".format(V))
-	print("Policy: \n{}".format(policy))
+	goal_reached = 0;
+	number_of_episodes = 1000
+
+	for i_episode in range(number_of_episodes):
+		state = env.reset();
+		while True:
+			env.render()
+			action = policy[state]
+			state, reward, done, _ = env.step(action)
+			if done:
+				if reward != 0:
+					goal_reached += 1
+				print("episode terminated, reached state {}".format(state))
+				break
+
+
+	# policy = np.reshape(policy, (4,4))
+	# V = np.reshape(V, (4,4))
+	# print("Value function: \n{}".format(V))
+	# print("Policy: \n{}".format(policy))
+	print("Goal reached: {} times".format(goal_reached))
+	print("Goal reached: {}%".format(float(goal_reached) / number_of_episodes))
+
 
 def temp(env):
 
@@ -250,7 +267,7 @@ def temp(env):
 3 -> up
 """
 def main():
-	env = gym.make('FrozenLake-v0')
+	env = gym.make('FrozenLake8x8-v0')
 	num_states = env.observation_space.n
 	num_actions = env.action_space.n
 	V, policy = construct_model(env, num_states, num_actions)
