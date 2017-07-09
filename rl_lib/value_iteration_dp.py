@@ -280,7 +280,6 @@ def main():
 		num_actions = env.action_space.n
 		V, policy = construct_model(env, num_states, num_actions)
 		sample_env(file, env, V, policy)
-
 		# uncomment below to for random action
 		#sample_env(file, env, V, policy, True)
 
