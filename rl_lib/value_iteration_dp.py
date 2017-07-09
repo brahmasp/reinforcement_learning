@@ -117,12 +117,6 @@ def update_experience(trans_counts, trans_rewards, hist):
 			for a in range(num_actions):
 				trans_counts[next_state][a][next_state] = 1
 				trans_rewards[next_state][a][next_state] = 0
-				# trans_counts[next_state][a][next_state] += 1
-				# count = trans_counts[next_state][a][next_state]
-				# curr_reward = trans_rewards[next_state][a][next_state]
-
-				# # Calculating average
-				# trans_rewards[next_state][action][next_state] = curr_reward + (1.0 / count)*(reward - curr_reward)
 
 	return trans_counts, trans_rewards
 
@@ -286,6 +280,7 @@ def main():
 		num_actions = env.action_space.n
 		V, policy = construct_model(env, num_states, num_actions)
 		sample_env(file, env, V, policy)
+		
 		# uncomment below to for random action
 		#sample_env(file, env, V, policy, True)
 
