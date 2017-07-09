@@ -269,8 +269,8 @@ def main():
 	# Success rates in order
 	# 100%
 	# 100%
-	# 74.8%
-	# 86.9%
+	# ~75%
+	# ~85%
 	env_list = ['Deterministic-4x4-FrozenLake-v0', 'Deterministic-8x8-FrozenLake-v0', 'FrozenLake-v0', 'FrozenLake8x8-v0']
 
 	
@@ -280,7 +280,7 @@ def main():
 		num_actions = env.action_space.n
 		V, policy = construct_model(env, num_states, num_actions)
 		sample_env(file, env, V, policy)
-		
+
 		# uncomment below to for random action
 		#sample_env(file, env, V, policy, True)
 
