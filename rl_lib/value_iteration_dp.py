@@ -110,12 +110,13 @@ def update_experience(trans_counts, trans_rewards, hist):
 				trans_rewards[next_state][a][next_state] = 0
 	return trans_counts, trans_rewards
 
-def construct_model(env, num_states, num_actions, num_episodes = 1):
+def construct_model(env, num_states, num_actions, num_episodes = 10000):
 
 	P = init_model(num_states, num_actions)
 	trans_counts = init_trans_counts(num_states, num_actions)
 	trans_rewards = init_trans_rewards(num_states, num_actions)
 
+	term_states = []
 	for i_episode in range(num_episodes):
 
 		# some init state 
@@ -147,6 +148,7 @@ def construct_model(env, num_states, num_actions, num_episodes = 1):
 			# keep track of this experience in the history list
 			hist.append(sub_hist)
 			if done:
+				term_states.append(state)
 				print "Finished episode {} and state {}".format(i_episode + 1, state);
 				break;
 
@@ -155,11 +157,28 @@ def construct_model(env, num_states, num_actions, num_episodes = 1):
 		# model of environment
 		trans_counts, trans_rewards = update_experience(trans_counts, trans_rewards, hist)
 
-	print (trans_counts)
-	print("\n");
-	print (trans_rewards)
 
-	# get_model_from_experience(trans_counts, trans_rewards)
+
+	P = get_model_from_experience(trans_counts, trans_rewards)
+	# for t in term_states:
+	# 	for a in range(num_actions):
+	# 		if P[t][a][t][2] != 0:
+	# 			print P[t][a][t];
+	value_iterate(P, num_states, num_actions)
+
+def eps_greedy_policy(env, action, eps = 0.1):
+
+	p = np.random.random()
+
+	if p <= eps:
+		return env.action_space.sample()
+	else:
+		action
+
+
+def value_iterate(P, num_states, num_actions):
+	
+	return
 
 def sample_env(env):
 	# Number of epsiodes
@@ -179,7 +198,7 @@ def sample_env(env):
 
 
 def main():
-	env = gym.make('FrozenLake-v0')
+	env = gym.make('FrozenLake8x8-v0')
 	num_states = env.observation_space.n
 	num_actions = env.action_space.n
 	construct_model(env, num_states, num_actions)
