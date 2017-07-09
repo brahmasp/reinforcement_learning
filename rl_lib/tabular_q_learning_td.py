@@ -46,38 +46,38 @@ def greedy(state, q_values):
 
 def q_learn(env, num_states, num_actions, discount = 0.99):
 
-	num_episodes = 15000
+	num_episodes = 75000
 	eps = 0.8
 	decay_rate = 0.99
 
 	# Table of q values
 	# q[state][action] corresponds to total return if action was taken at state
 	# and then policy was followed
-	q_values = np.random.rand(num_states, num_actions)
+	q_values = np.zeros((num_states, num_actions))
 	q_values_counts = np.zeros((num_states, num_actions))
 	
 
 	for i_episode in range(num_episodes):
 		state = env.reset()
-
 		while True:
 			env.render()
 
 			action = epsilon_greedy(env, state, q_values, eps)
 			current_q_value = q_values[state][action]
 			q_values_counts[state][action] += 1
+			current_state = state
 			learning_rate =  1.0 / q_values_counts[state][action]
 
 			state, reward, done, _ = env.step(action)
 
+			off_policy_max_action = greedy(state, q_values)
+			q_values[current_state][action] = current_q_value + (learning_rate) * (reward + discount * q_values[state][off_policy_max_action] - current_q_value)
+			
 			if done:
-				# Terminal state
-				q_values[state].fill(0)
 				print ("finished episode")
 				break
-			else:
-				off_policy_max_action = greedy(state, q_values)
-				q_values[state][action] = current_q_value + (learning_rate) * (reward + discount * q_values[state][off_policy_max_action] - current_q_value)
+
+
 
 	print(q_values)
 	return q_values
@@ -116,8 +116,8 @@ def sample_env(env, policy):
 
 def main():
 
-	env_list = ['Deterministic-4x4-FrozenLake-v0', 'Deterministic-8x8-FrozenLake-v0', 'FrozenLake-v0', 'FrozenLake8x8-v0']
-	env_list = ['Deterministic-4x4-FrozenLake-v0']
+	env_list = ['Deterministic-4x4-FrozenLake-v0', 'FrozenLake-v0', 'Deterministic-8x8-FrozenLake-v0', 'FrozenLake8x8-v0']
+	env_list = [].append(env_list[2])
 	
 	for env_item in env_list:
 		env = gym.make(env_item)
@@ -126,8 +126,8 @@ def main():
 		q_values = q_learn(env, num_states, num_actions)
 		policy = policy_extraction(q_values, num_states, num_actions)
 
-		#sample_env(env, policy)
-
+		sample_env(env, policy)
+		time.sleep(10)
 		# uncomment below to for random action
 		#sample_env(file, env, V, policy, True)
 		env.close()
