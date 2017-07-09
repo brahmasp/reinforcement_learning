@@ -110,7 +110,7 @@ def update_experience(trans_counts, trans_rewards, hist):
 				trans_rewards[next_state][a][next_state] = 0
 	return trans_counts, trans_rewards
 
-def construct_model(env, num_states, num_actions, num_episodes = 10000):
+def construct_model(env, num_states, num_actions, num_episodes = 5000):
 
 	P = init_model(num_states, num_actions)
 	trans_counts = init_trans_counts(num_states, num_actions)
@@ -157,8 +157,6 @@ def construct_model(env, num_states, num_actions, num_episodes = 10000):
 		# model of environment
 		trans_counts, trans_rewards = update_experience(trans_counts, trans_rewards, hist)
 
-
-
 	P = get_model_from_experience(trans_counts, trans_rewards)
 	# for t in term_states:
 	# 	for a in range(num_actions):
@@ -173,12 +171,35 @@ def eps_greedy_policy(env, action, eps = 0.1):
 	if p <= eps:
 		return env.action_space.sample()
 	else:
-		action
+		return action
 
 
-def value_iterate(P, num_states, num_actions):
+def init_value_function(num_states):
 	
-	return
+	# Return row vector of all zeros 
+	# size of number of states
+	return np.zeros((1, num_states))[0]
+
+def value_iterate(P, num_states, num_actions, discount = 0.95):
+
+	V = init_value_function(num_states);
+	print("Before value iteration {}".format(V))
+	for _ in range (10000):
+		for s in range(num_states):
+			v = V[s];
+			q = []
+			for a in range(num_actions):
+				value = 0
+				next_states = P[s][a]
+				for next_s in next_states:
+					# Expected value of state
+					# prob * (reward + value(s'))
+					value += next_s[0] * (next_s[2] + discount * V[next_s[1]])
+				q.append(value)
+			V[s] = max(q);
+
+	V = np.reshape(V, (4,4))
+	print("After value iteration \n{}".format(V))	
 
 def sample_env(env):
 	# Number of epsiodes
@@ -198,7 +219,7 @@ def sample_env(env):
 
 
 def main():
-	env = gym.make('FrozenLake8x8-v0')
+	env = gym.make('FrozenLake-v0')
 	num_states = env.observation_space.n
 	num_actions = env.action_space.n
 	construct_model(env, num_states, num_actions)
