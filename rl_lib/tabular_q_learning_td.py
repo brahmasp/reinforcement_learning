@@ -46,11 +46,15 @@ def greedy(state, q_values):
 
 def q_learn(env, num_states, num_actions, discount = 0.99):
 
-	# 100k -> 73.1%
-	# 10k ~ 73%
+	"""
+	ep = 10k
+	eps = 1, decay = 0.99
+	min_learning_rate = 0.001
+	decary every episode
+	"""
 	num_episodes = 10000
 	eps = 1
-	decay_rate = 0.9
+	decay_rate = 0.995
 	min_learning_rate = 0.001
 
 	# Table of q values
@@ -75,14 +79,17 @@ def q_learn(env, num_states, num_actions, discount = 0.99):
 
 			state, reward, done, _ = env.step(action)
 
+			# forcing penalization if reached hole
+			if done and reward == 0:
+				reward = -1
+
 			off_policy_max_action = greedy(state, q_values)
 			q_values[current_state][action] = current_q_value + (learning_rate) * (reward + discount * q_values[state][off_policy_max_action] - current_q_value)
 			
 			if done:
+				eps *= decay_rate
 				print ("finished episode {}".format(i_episode + 1))
 				break
-		if i_episode % 5000 == 0:
-			eps *= 1
 
 	print(q_values)
 	return q_values
