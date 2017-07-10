@@ -185,8 +185,6 @@ def policy_extraction(P, num_states, num_actions, V, policy, discount = 0.9):
 			value = 0
 			for next_s in next_states:
 
-				# relevant only if possible to go this next state
-				# so probability is not zero
 				# Given an action how much value does it give
 				# collect all these values
 				# find the max value. thats where we want to go
