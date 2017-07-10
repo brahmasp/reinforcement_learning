@@ -30,7 +30,7 @@ def epsilon_greedy(env, state, q_values, eps):
 
 	p = np.random.random()
 
-	if p <= eps:
+	if p < eps:
 		return env.action_space.sample()
 	else:
 		# Returns a list, index is the action, value stored is the expected value
@@ -38,24 +38,26 @@ def epsilon_greedy(env, state, q_values, eps):
 
 
 def greedy(state, q_values):
-	q_values_per_action = q_values[state]
 
-	action = np.argmax(q_values_per_action)
-	return action
-
+	return np.argmax(q_values[state])
 
 def q_learn(env, num_states, num_actions, discount = 0.99):
 
 	"""
-	ep = 10k
-	eps = 1, decay = 0.99
-	min_learning_rate = 0.001
-	decary every episode
+	With only 1k episodes, want high exploration in the beginning
+	But it should decrease to converge the max values
+
+	Lower bound of learning rate to prevent equaling 0. If equals zero then
+	there will be no updates to the q values as experienced
+
+	With specs below, success rate high is ~75% and with a low of ~53%
+
 	"""
 	num_episodes = 1000
 	eps = 1
-	decay_rate = 0.996
+	decay_rate = 0.995
 	min_learning_rate = 0.001
+	default_learning_rate = 0.1
 
 	# Table of q values
 	# q[state][action] corresponds to total return if action was taken at state
@@ -80,20 +82,20 @@ def q_learn(env, num_states, num_actions, discount = 0.99):
 			state, reward, done, _ = env.step(action)
 
 			# forcing penalization if reached hole
-			if state == current_state:
-				r = -1
-			elif done and reward == 0:
-				reward = -10
+			# bad if we reach back the same position or if its a hole
+			# negative reward to distinguish from neutral spots in grid
+			if done and reward == 0:
+				reward = -1
 
 			off_policy_max_action = greedy(state, q_values)
 			q_values[current_state][action] = current_q_value + (learning_rate) * (reward + discount * q_values[state][off_policy_max_action] - current_q_value)
 			
 			if done:
+
+				# decaying per episode
 				eps *= decay_rate
 				print ("finished episode {}".format(i_episode + 1))
 				break
-		if i_episode % 50:
-			eps *= 1
 	return q_values
 
 def policy_extraction(q_values, num_states, num_actions):
