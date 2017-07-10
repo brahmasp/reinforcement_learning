@@ -53,7 +53,7 @@ def q_learn(env, num_states, num_actions, discount = 0.99):
 	With specs below, success rate high is ~75% and with a low of ~53%
 
 	"""
-	num_episodes = 2000
+	num_episodes = 1000
 	eps = 1
 	decay_rate = 0.997
 	min_learning_rate = 0.001
