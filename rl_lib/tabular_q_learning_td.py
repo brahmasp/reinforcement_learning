@@ -41,7 +41,7 @@ def greedy(state, q_values):
 
 	return np.argmax(q_values[state])
 
-def q_learn(env, num_states, num_actions, discount = 0.99):
+def q_learn(env, num_states, num_actions, discount = 0.9):
 
 	"""
 	With only 1k episodes, want high exploration in the beginning
