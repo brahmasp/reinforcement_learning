@@ -124,22 +124,28 @@ def sample_env(env, policy):
 					goal_reached += 1
 				break
 
-	print("reached goal {}%".format(float(goal_reached * 100) / num_episodes));
+	result = float(goal_reached * 100) / num_episodes
+	#print("reached goal {}%".format(result))
 
-def verify_policy_with_vi(policy):
+	return result
 
-	vi_result = vi_main(True)
-	matching = policy == vi_result
-	print ("result matches with vi {}".format(policy == vi_result))
+def verify_policy_with_vi(env, policy):
 
-	if policy != vi_result:
+	vi_policy = vi_main(True)
+	matching = policy == vi_policy
+
+	q_result = sample_env(env, policy)
+	vi_result = sample_env(env, vi_policy)
+	print ("result matches with vi {}".format(policy == vi_policy))
+
+	if policy != vi_policy:
 		policy = np.reshape(policy, (4,4))
-		vi_result = np.reshape(vi_result, (4,4))
+		vi_policy = np.reshape(vi_policy, (4,4))
 
-		print("below is q learning result\n")
+		print("below is q learning result, with success {}\n".format(q_result))
 		print(policy)
-		print("below is vi result:\n")
-		print (vi_result)
+		print("below is vi result with sucesss {}\n".format(vi_result))
+		print (vi_policy)
 
 def main():
 
@@ -151,7 +157,7 @@ def main():
 		num_actions = env.action_space.n
 		q_values = q_learn(env, num_states, num_actions)
 		policy = policy_extraction(q_values, num_states, num_actions)
-		verify_policy_with_vi(policy)
+		verify_policy_with_vi(env, policy)
 
 		#sample_env(env, policy)
 		# uncomment below to for random action
