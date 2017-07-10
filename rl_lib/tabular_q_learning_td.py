@@ -125,6 +125,21 @@ def sample_env(env, policy):
 
 	print("reached goal {}%".format(float(goal_reached * 100) / num_episodes));
 
+def verify_policy_with_vi(policy):
+
+	vi_result = [0, 3, 3, 3, 0, 0, 2, 0, 3, 1, 0, 0, 0, 2, 1, 0]
+	matching = policy == vi_result
+	print ("result matches with vi {}".format(policy == vi_result))
+
+	if policy != vi_result:
+		policy = np.reshape(policy, (4,4))
+		vi_result = np.reshape(vi_result, (4,4))
+
+		print("below is q learning result\n")
+		print(policy)
+		print("below is vi result:\n")
+		print (vi_result)
+
 def main():
 
 	env_list = ['Deterministic-4x4-FrozenLake-v0', 'FrozenLake-v0', 'Deterministic-8x8-FrozenLake-v0', 'FrozenLake8x8-v0']
@@ -137,7 +152,8 @@ def main():
 		q_values = q_learn(env, num_states, num_actions)
 		policy = policy_extraction(q_values, num_states, num_actions)
 
-		sample_env(env, policy)
+		verify_policy_with_vi(policy)
+		#sample_env(env, policy)
 		# uncomment below to for random action
 		#sample_env(file, env, V, policy, True)
 		env.close()
