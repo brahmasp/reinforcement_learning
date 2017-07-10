@@ -128,7 +128,7 @@ def sample_env(env, policy):
 
 def verify_policy_with_vi(policy):
 
-	vi_result = vi_main()
+	vi_result = vi_main(True)
 	matching = policy == vi_result
 	print ("result matches with vi {}".format(policy == vi_result))
 
@@ -152,7 +152,7 @@ def main():
 		q_values = q_learn(env, num_states, num_actions)
 		policy = policy_extraction(q_values, num_states, num_actions)
 		verify_policy_with_vi(policy)
-		
+
 		#sample_env(env, policy)
 		# uncomment below to for random action
 		#sample_env(file, env, V, policy, True)

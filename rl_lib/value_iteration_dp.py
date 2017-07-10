@@ -262,7 +262,7 @@ def sample_env(file, env, V, policy, random = False):
 2 -> right
 3 -> up
 """
-def main():
+def main(return_policy = False):
 	# Success rates in order
 	# 100%
 	# 100%
@@ -275,7 +275,9 @@ def main():
 		num_states = env.observation_space.n
 		num_actions = env.action_space.n
 		V, policy = construct_model(env, num_states, num_actions)
-		return policy
+
+		if return_policy:
+			return policy
 		sample_env(file, env, V, policy)
 		# uncomment below to for random action
 		#sample_env(file, env, V, policy, True)
