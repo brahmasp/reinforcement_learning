@@ -54,10 +54,10 @@ def q_learn(env, num_states, num_actions, discount = 0.99):
 
 	"""
 	num_episodes = 1000
-	eps = 1
-	decay_rate = 0.997
-	min_learning_rate = 0.001
-	default_learning_rate = 0.1
+	eps = 1 # exploration probability
+	decay_rate = 0.997 # decay of exploration
+	min_learning_rate = 0.001 # lower bound to prevent reaching 0
+	default_learning_rate = 0.1 # just in case
 
 	# Table of q values
 	# q[state][action] corresponds to total return if action was taken at state
@@ -91,7 +91,6 @@ def q_learn(env, num_states, num_actions, discount = 0.99):
 			q_values[current_state][action] = current_q_value + (learning_rate) * (reward + discount * q_values[state][off_policy_max_action] - current_q_value)
 			
 			if done:
-
 				# decaying per episode
 				eps *= decay_rate
 				print ("finished episode {}".format(i_episode + 1))
