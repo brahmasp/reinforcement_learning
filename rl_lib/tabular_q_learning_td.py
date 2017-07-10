@@ -2,6 +2,7 @@ import numpy as np
 import gym
 from lake_envs import *
 import time
+from value_iteration_dp import main as vi_main
 
 """
 Agent is a tabular Q-learner
@@ -127,7 +128,7 @@ def sample_env(env, policy):
 
 def verify_policy_with_vi(policy):
 
-	vi_result = [0, 3, 3, 3, 0, 0, 2, 0, 3, 1, 0, 0, 0, 2, 1, 0]
+	vi_result = vi_main()
 	matching = policy == vi_result
 	print ("result matches with vi {}".format(policy == vi_result))
 
@@ -142,17 +143,16 @@ def verify_policy_with_vi(policy):
 
 def main():
 
-	env_list = ['Deterministic-4x4-FrozenLake-v0', 'FrozenLake-v0', 'Deterministic-8x8-FrozenLake-v0', 'FrozenLake8x8-v0']
+	env_list = ['Deterministic-4x4-FrozenLake-v0', 'Stochastic-4x4-FrozenLake-v0', 'Deterministic-8x8-FrozenLake-v0', 'FrozenLake8x8-v0']
 	env_list = [env_list[1]]
-	
 	for env_item in env_list:
 		env = gym.make(env_item)
 		num_states = env.observation_space.n
 		num_actions = env.action_space.n
 		q_values = q_learn(env, num_states, num_actions)
 		policy = policy_extraction(q_values, num_states, num_actions)
-
 		verify_policy_with_vi(policy)
+		
 		#sample_env(env, policy)
 		# uncomment below to for random action
 		#sample_env(file, env, V, policy, True)

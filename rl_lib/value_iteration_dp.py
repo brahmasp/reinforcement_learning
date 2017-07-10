@@ -269,12 +269,13 @@ def main():
 	# ~75%
 	# ~85%
 	env_list = ['Deterministic-4x4-FrozenLake-v0', 'Stochastic-4x4-FrozenLake-v0', 'Deterministic-8x8-FrozenLake-v0', 'FrozenLake8x8-v0']
-	
+	env_list = [env_list[1]]
 	for env_item in env_list:
 		env = gym.make(env_item)
 		num_states = env.observation_space.n
 		num_actions = env.action_space.n
 		V, policy = construct_model(env, num_states, num_actions)
+		return policy
 		sample_env(file, env, V, policy)
 		# uncomment below to for random action
 		#sample_env(file, env, V, policy, True)
