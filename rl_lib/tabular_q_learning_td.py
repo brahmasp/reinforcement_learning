@@ -54,8 +54,8 @@ def q_learn(env, num_states, num_actions, discount = 0.9):
 	With specs below, success rate high is ~75% and with a low of ~53%
 
 	"""
-	num_episodes = 1000
-	eps = 1 # exploration probability
+	num_episodes = 10000
+	eps = 0.1 # exploration probability
 	decay_rate = 0.997 # decay of exploration
 	min_learning_rate = 0.001 # lower bound to prevent reaching 0
 	default_learning_rate = 0.1 # just in case
@@ -93,7 +93,7 @@ def q_learn(env, num_states, num_actions, discount = 0.9):
 			
 			if done:
 				# decaying per episode
-				eps *= decay_rate
+				#eps *= decay_rate
 				print ("finished episode {}".format(i_episode + 1))
 				break
 	return q_values
@@ -157,9 +157,9 @@ def main():
 		num_actions = env.action_space.n
 		q_values = q_learn(env, num_states, num_actions)
 		policy = policy_extraction(q_values, num_states, num_actions)
-		verify_policy_with_vi(env, policy)
+		#verify_policy_with_vi(env, policy)
 
-		#sample_env(env, policy)
+		print("success: {}%".format(sample_env(env, policy)))
 		# uncomment below to for random action
 		#sample_env(file, env, V, policy, True)
 		env.close()
