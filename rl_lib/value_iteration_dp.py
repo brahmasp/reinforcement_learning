@@ -176,7 +176,7 @@ def construct_model(env, num_states, num_actions, num_episodes = 50000):
 After value iteration converges, time to extract the policy
 
 """
-def policy_extraction(P, num_states, num_actions, V, policy, discount = 0.99):
+def policy_extraction(P, num_states, num_actions, V, policy, discount = 0.9):
 
 	for s in range(num_states):
 		q = []
@@ -191,8 +191,7 @@ def policy_extraction(P, num_states, num_actions, V, policy, discount = 0.99):
 				# collect all these values
 				# find the max value. thats where we want to go
 				# index of max corresponds to desired action
-				if next_s[0] != 0:
-					value += next_s[0] * (next_s[2] + discount * V[next_s[1]])
+				value += next_s[0] * (next_s[2] + discount * V[next_s[1]])
 			q.append(value)
 
 		policy[s] = np.argmax(q)
@@ -202,7 +201,7 @@ def policy_extraction(P, num_states, num_actions, V, policy, discount = 0.99):
 """
 Performing value iteration
 """
-def value_iterate(P, num_states, num_actions, discount = 0.99):
+def value_iterate(P, num_states, num_actions, discount = 0.9):
 
 	V = np.zeros((1, num_states))[0]
 	policy = [-1 for _ in range(num_states)]
@@ -238,7 +237,7 @@ def sample_env(file, env, V, policy, random = False):
 	# Timesteps in a given epsiode
 	# Can use while True: till the very end of the episode
 	goal_reached = 0;
-	number_of_episodes = 1000
+	number_of_episodes = 100
 
 	for i_episode in range(number_of_episodes):
 		state = env.reset();
@@ -271,8 +270,7 @@ def main():
 	# 100%
 	# ~75%
 	# ~85%
-	env_list = ['Deterministic-4x4-FrozenLake-v0', 'Deterministic-8x8-FrozenLake-v0', 'FrozenLake-v0', 'FrozenLake8x8-v0']
-
+	env_list = ['Deterministic-4x4-FrozenLake-v0', 'Stochastic-4x4-FrozenLake-v0', 'Deterministic-8x8-FrozenLake-v0', 'FrozenLake8x8-v0']
 	
 	for env_item in env_list:
 		env = gym.make(env_item)
