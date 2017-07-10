@@ -52,9 +52,9 @@ def q_learn(env, num_states, num_actions, discount = 0.99):
 	min_learning_rate = 0.001
 	decary every episode
 	"""
-	num_episodes = 10000
+	num_episodes = 1000
 	eps = 1
-	decay_rate = 0.995
+	decay_rate = 0.996
 	min_learning_rate = 0.001
 
 	# Table of q values
@@ -80,8 +80,10 @@ def q_learn(env, num_states, num_actions, discount = 0.99):
 			state, reward, done, _ = env.step(action)
 
 			# forcing penalization if reached hole
-			if done and reward == 0:
-				reward = -1
+			if state == current_state:
+				r = -1
+			elif done and reward == 0:
+				reward = -10
 
 			off_policy_max_action = greedy(state, q_values)
 			q_values[current_state][action] = current_q_value + (learning_rate) * (reward + discount * q_values[state][off_policy_max_action] - current_q_value)
@@ -90,20 +92,16 @@ def q_learn(env, num_states, num_actions, discount = 0.99):
 				eps *= decay_rate
 				print ("finished episode {}".format(i_episode + 1))
 				break
-
-	print(q_values)
+		if i_episode % 50:
+			eps *= 1
 	return q_values
 
 def policy_extraction(q_values, num_states, num_actions):
 	
 	policy = [-1 for _ in range(num_states)]
 
-
 	for state in range(num_states):
-
-		print("state {} and value {}".format(state + 1,max(q_values[state])))
 		policy[state] = np.argmax(q_values[state])
-
 	return policy
 
 def sample_env(env, policy):
@@ -139,7 +137,6 @@ def main():
 		policy = policy_extraction(q_values, num_states, num_actions)
 
 		sample_env(env, policy)
-		time.sleep(10)
 		# uncomment below to for random action
 		#sample_env(file, env, V, policy, True)
 		env.close()
