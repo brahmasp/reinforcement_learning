@@ -118,10 +118,10 @@ def policy_extraction(q_values, num_states, num_actions):
 
 def sample_env(env, policy):
 
-	num_episodes = 1000
-	goal_reached = 0
+	num_episodes = 100
+	avg_reward = 0
 
-	for _ in range(num_episodes):
+	for episode_count in range(num_episodes):
 		state = env.reset()
 		while True:
 			env.render()
@@ -130,14 +130,9 @@ def sample_env(env, policy):
 			state, reward, done, _ = env.step(action)
 
 			if done:
-				if reward != 0:
-					goal_reached += 1
+				avg_reward = avg_reward + (1.0 / (episode_count + 1)) * (reward - avg_reward)
 				break
-
-	result = float(goal_reached * 100) / num_episodes
-	#print("reached goal {}%".format(result))
-
-	return result
+	return avg_reward
 
 def verify_policy_with_vi(env, policy):
 
@@ -173,7 +168,7 @@ def main():
 		policy = policy_extraction(q_values, num_states, num_actions)
 		#verify_policy_with_vi(env, policy)
 
-		print("success: {}%".format(sample_env(env, policy)))
+		print("average reward collected: {}".format(sample_env(env, policy)))
 		# uncomment below to for random action
 		#sample_env(file, env, V, policy, True)
 		env.close()
