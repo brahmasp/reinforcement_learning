@@ -58,8 +58,8 @@ def td_learn(env, num_states, num_actions, SARSA, discount = 0.9):
 	With specs below, success rate high is ~75% and with a low of ~53%
 
 	"""
-	num_episodes = 10000
-	eps = 0.1 # exploration probability
+	num_episodes = 1000
+	eps = 1 # exploration probability
 	decay_rate = 0.997 # decay of exploration
 	min_learning_rate = 0.001 # lower bound to prevent reaching 0
 	default_learning_rate = 0.1 # just in case
@@ -74,7 +74,7 @@ def td_learn(env, num_states, num_actions, SARSA, discount = 0.9):
 	for i_episode in range(num_episodes):
 		state = env.reset()
 		while True:
-			env.render()
+			#env.render()
 
 			action = epsilon_greedy(env, state, q_values, eps)
 			current_q_value = q_values[state][action]
@@ -103,7 +103,7 @@ def td_learn(env, num_states, num_actions, SARSA, discount = 0.9):
 			
 			if done:
 				# decaying per episode
-				#eps *= decay_rate
+				eps *= decay_rate
 				print ("finished episode {}".format(i_episode + 1))
 				break
 	return q_values
@@ -124,7 +124,7 @@ def sample_env(env, policy):
 	for episode_count in range(num_episodes):
 		state = env.reset()
 		while True:
-			env.render()
+			#env.render()
 			action = policy[state]
 
 			state, reward, done, _ = env.step(action)
