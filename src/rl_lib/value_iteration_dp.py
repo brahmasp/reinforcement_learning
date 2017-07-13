@@ -136,7 +136,7 @@ def construct_model(env, num_states, num_actions, num_episodes = 50000):
 		hist = []
 		while True:
 			sub_hist = []
-			env.render()
+			#env.render()
 
 			action = env.action_space.sample()
 
@@ -236,11 +236,12 @@ def sample_env(file, env, V, policy, random = False):
 	# Can use while True: till the very end of the episode
 	goal_reached = 0;
 	number_of_episodes = 100
+	average_reward = 0
 
 	for i_episode in range(number_of_episodes):
 		state = env.reset();
 		while True:
-			env.render()
+			#env.render()
 			if random:
 				action = env.action_space.sample()
 			else:
@@ -248,14 +249,14 @@ def sample_env(file, env, V, policy, random = False):
 			
 			state, reward, done, _ = env.step(action)
 			if done:
-				if reward != 0:
-					goal_reached += 1
+				average_reward = average_reward + (1.0 / (i_episode + 1)) * (reward - average_reward)
 				print("episode terminated, reached state {}".format(state))
 				break
 
 
-	result_string = "Goal reached: {}%".format(float(goal_reached * 100.0) / number_of_episodes)
-	print(result_string)
+	#result_string = "Goal reached: {}%".format(float(goal_reached * 100.0) / number_of_episodes)
+	#print(result_string)
+	return average_reward
 """
 0 -> left
 1 -> down
@@ -278,7 +279,7 @@ def main(return_policy = False):
 
 		if return_policy:
 			return policy
-		sample_env(file, env, V, policy)
+		print("average reward collected: {}".format(sample_env(file, env, V, policy)))
 		# uncomment below to for random action
 		#sample_env(file, env, V, policy, True)
 
