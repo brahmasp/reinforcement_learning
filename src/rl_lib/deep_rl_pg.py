@@ -81,7 +81,7 @@ class PongAI(object):
 		# h is a 1 * 200 vector - output from each neuron
 		# 1 * 200 * 200 * 1 = 1 element
 		p = np.dot(h, self.weights['w2'])
-		return self.sigmoid (p)
+		return self.sigmoid (p), h
 
 
 	# Process the image
@@ -134,10 +134,26 @@ class PongAI(object):
 			self.env.render();
 			nn_input_state, prev_state = self.preprocess(current_state, prev_state)
 
-			up_probability = self.feedforward(nn_input_state)
+			# keeping track of observations passed to NN
+			episode_observations.append(nn_input_state)
+
+			up_probability, hidden_layer_output = self.feedforward(nn_input_state)
+
+			# keeping track of hidden layer output after ReLU
+			episode_hidden_layer_values.append(hidden_layer_output)
+
+			# Should we move up?
 			action = self.choose_action(up_probability)
 
-			break;
+			state, reward, done, info = self.env.step(action)
+
+
+
+			reward_sum += reward
+
+			# keep track of rewards
+			episode_rewards.append(reward)
+
 
 
 
