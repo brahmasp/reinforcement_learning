@@ -33,7 +33,20 @@ General procedure:
 - Feed this into a 2 layer neural network
 - Spits out the probability of going UP, sample from this distritbution
 - After an episode (reaching 21 points), compute gradients
+	- Our result is a sigmoid function
+	- During backprop we need the local gradients
+	- one being, dL/df where f is linear combination of all the ReLU outputs
+	- taking the derivative (http://cs231n.github.io/neural-networks-2/#losses)
+	- Above is based on gradient ascent. check logistic regression: https://see.stanford.edu/materials/aimlcs229/cs229-notes1.pdf
+	- But we dont know the correct label unlike the supervised learning example above
+	- so we consider the action we took as correct in this RL problem
+	- So a frame is inputed into the NN, out comes a probability
+	- This has an associated loss, we can get the rate of change of this loss wrt f
+	- using "correct" answer as what we ended up sampling
 - after 10 episodes (minibatch SGD) sum the gradients and move in gradient direction
+- want to use policy gradients
+	- at the end of an episode (when someone reaches 21 points)
+	- we encourage all actions that let us win, or discourage actions that made us lose
 
 """
 
@@ -118,6 +131,30 @@ class PongAI(object):
 		else:
 			return 3 # go down
 
+	def discount_rewards(self, rewards):
+
+		discounted_rewards = np.zeros_like(rewards)
+		running_reward = 0
+		gamma = self.gamma
+
+		# discounting rewards in the future
+		# G1 = r1 + gamma*r2 + gamma^2 *r3 + ... + gamma^(n-1) * rn
+		# Gn-1 = rn-1 + gamma * rn
+		# Gn = rn
+		for t in reversed(range(rewards.size)):
+
+			if rewards[t] != 0:
+				running_reward = 0 #TODO - ??
+
+			running_reward = gamma * running_reward + rewards[t]
+			discounted_rewards[t] = running_reward
+
+		# reward pre processing
+		discounted_rewards -= np.mean(discounted_rewards)
+		discounted_rewards /= np.std(discounted_rewards)
+		return discounted_rewards
+
+	 
 
 	def start_learning(self):
 		
@@ -142,20 +179,54 @@ class PongAI(object):
 			# keeping track of hidden layer output after ReLU
 			episode_hidden_layer_values.append(hidden_layer_output)
 
-			# Should we move up?
+			# Should we move up or down
 			action = self.choose_action(up_probability)
 
+			# for backprop purposes we need dL/df. f is linear comb of ReLU outputs
+			# L is the sigmoid function result (the probability)
+			# turns out that dL/df = y - sigmoid(f)
+			# We dont have correct answer, y. So we consider whatever we did in "action"
+			# to be correct
+			# here let dL/df = loss_grad_f
+			# consider "correct" answers here as fake labels of classification
+			# if action is up, the classified as 1 else 0 (treated as a binary classification problem)
+			# 1 is class of up, 0 is of down
+			fake_label = 1 if action == 2 else 0
+
+			# as per formula of gradient
+			loss_grad_f = fake_label - up_probability
+			episode_gradient_log_ps.append(loss_grad_f)
+
+			
 			state, reward, done, info = self.env.step(action)
-
-
 
 			reward_sum += reward
 
 			# keep track of rewards
 			episode_rewards.append(reward)
 
+			# done is considered when a player reaches 21 points
+			# a = [11,12,13]
+			# np.vstack(a) = [[11], [12], [13]]
+			if done:
+				episode_hidden_layer_values = np.vstack(episode_hidden_layer_values)
+				episode_observations = np.vstack(episode_observations)
+				episode_gradient_log_ps = np.vstack(episode_gradient_log_ps)
+				episode_rewards = np.vstack(episode_rewards)
 
+				# we want to weight actions closer to the end of the episode
+				# more heavily than ealier ones because it is more likely that
+				# later actions affected outcome of the episode. Use discounting.
+				episode_discounted_rewards = self.discount_rewards(episode_rewards)
 
+				# Starting off policy gradients
+				# f(x) = reward function
+				# dL/dw
+				# we want f(x)*(dL/dw)
+				# with below we have dL/df. We get dL/dw using chain rule and 
+				# simply chaining the multiplication
+				# element wise multiplication
+				episode_gradient_log_ps_discounted = episode_gradient_log_ps * episode_discounted_rewards
 
 
 
@@ -175,12 +246,13 @@ def temp_sim():
 			print(reward);
 
 		if done:
+			print("done!!!!")
 			break;
 
-#temp_sim()
+temp_sim()
 
-p = PongAI()
-p.start_learning()
+#p = PongAI()
+#p.start_learning()
 
 
 
