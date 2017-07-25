@@ -154,6 +154,47 @@ class PongAI(object):
 		discounted_rewards /= np.std(discounted_rewards)
 		return discounted_rewards
 
+	# BACKPROP!
+	# computes
+	# dL/dw1, dL/dw2
+	# gradients of loss wrt set of first weights and second weights
+	# essentially thing needed to govern how distribution will shift
+	def compute_gradients(self, episode_gradient_log_ps_discounted, episode_hidden_layer_values):
+
+		# let number of frames before end be F
+		# then first arg is F * 1
+		# second arg is F * 200 (because 200 hidden layers) for each frame as input into the NN
+		# results in a 200 * 1 matrix
+		# Each row in the 200 * 1 represents the sum of all gradients (each f for each diff input into nn
+		# ) wrt first weight. then second weight and so on
+		# Based on dL/dw2 = (dL/df) * (df/dw2)
+		dL_dw2 = np.dot(episode_hidden_layer_values.T, episode_gradient_log_ps_discounted).ravel()
+
+		# gradient of loss wrt first set of weights
+		# draw computational graph and backprop
+		# we have vector F * 1 (of all dL/df)
+		# we have vector 200 * 1 (weights in second layer)
+		# by computing backprop by hand we can see we need F * 200
+		# ie: for each episode we need a row of 200 entries such that each entry
+		# is dL/df * wi. Because wi = df/d(relu(f1)))
+
+		# whole thing is basically (ignore bad notation)
+		# dL/w1 = dL/df * df/dRelu(f1) * dRelu(f1)/df1 * df1/d(wx) * d(wx)/dw1
+		delta_l2 = np.outer(episode_gradient_log_ps_discounted, weights['2']) # F * 200 matrix
+		delta_l2[delta_l2 <= 0] = 0 # ReLU, equivalent to dRelu(f1)/df1 = 1 or 0 TODO - ??
+
+		# After getting till here, idea is that each gradient has to be multiplied with each
+		# input (because d(wx)/dw = x)
+		# And all gradients wrt same thing are added across frames
+		# in other words dL1/dw1 + dL2/dw1, wrt is same but L1 is cost for first frame, L2 is for second
+		# This is similar to abaove idea of summing all gridients for minibatch SGD
+		dL_dw1 = np.dot(delta_l2.T, observation_values) # the dwx/dw is just x (the input)
+		return {
+			'1': dL_dw1,
+			'2': dL_dw2
+		}
+
+
 	 
 
 	def start_learning(self):
@@ -198,7 +239,7 @@ class PongAI(object):
 			episode_gradient_log_ps.append(loss_grad_f)
 
 			
-			state, reward, done, info = self.env.step(action)
+			current_state, reward, done, info = self.env.step(action)
 
 			reward_sum += reward
 
@@ -227,6 +268,8 @@ class PongAI(object):
 				# simply chaining the multiplication
 				# element wise multiplication
 				episode_gradient_log_ps_discounted = episode_gradient_log_ps * episode_discounted_rewards
+
+
 
 
 
