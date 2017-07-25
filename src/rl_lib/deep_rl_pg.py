@@ -159,7 +159,7 @@ class PongAI(object):
 	# dL/dw1, dL/dw2
 	# gradients of loss wrt set of first weights and second weights
 	# essentially thing needed to govern how distribution will shift
-	def compute_gradients(self, episode_gradient_log_ps_discounted, episode_hidden_layer_values):
+	def compute_gradients(self, episode_gradient_log_ps_discounted, episode_hidden_layer_values, episode_observations):
 
 		# let number of frames before end be F
 		# then first arg is F * 1
@@ -180,7 +180,7 @@ class PongAI(object):
 
 		# whole thing is basically (ignore bad notation)
 		# dL/w1 = dL/df * df/dRelu(f1) * dRelu(f1)/df1 * df1/d(wx) * d(wx)/dw1
-		delta_l2 = np.outer(episode_gradient_log_ps_discounted, weights['2']) # F * 200 matrix
+		delta_l2 = np.outer(episode_gradient_log_ps_discounted, self.weights['2']) # F * 200 matrix
 		delta_l2[delta_l2 <= 0] = 0 # ReLU, equivalent to dRelu(f1)/df1 = 1 or 0 TODO - ??
 
 		# After getting till here, idea is that each gradient has to be multiplied with each
@@ -188,7 +188,7 @@ class PongAI(object):
 		# And all gradients wrt same thing are added across frames
 		# in other words dL1/dw1 + dL2/dw1, wrt is same but L1 is cost for first frame, L2 is for second
 		# This is similar to abaove idea of summing all gridients for minibatch SGD
-		dL_dw1 = np.dot(delta_l2.T, observation_values) # the dwx/dw is just x (the input)
+		dL_dw1 = np.dot(delta_l2.T, episode_observations) # the dwx/dw is just x (the input)
 		return {
 			'1': dL_dw1,
 			'2': dL_dw2
@@ -250,6 +250,7 @@ class PongAI(object):
 			# a = [11,12,13]
 			# np.vstack(a) = [[11], [12], [13]]
 			if done:
+				episode_number += 1
 				episode_hidden_layer_values = np.vstack(episode_hidden_layer_values)
 				episode_observations = np.vstack(episode_observations)
 				episode_gradient_log_ps = np.vstack(episode_gradient_log_ps)
@@ -268,10 +269,17 @@ class PongAI(object):
 				# simply chaining the multiplication
 				# element wise multiplication
 				episode_gradient_log_ps_discounted = episode_gradient_log_ps * episode_discounted_rewards
+				gradients = compute_gradients(episode_gradient_log_ps_discounted, episode_hidden_layer_values, episode_observations)
+
+				# at this point we have computed gradient taking into account many frames
+				# to get the loss, rate of change etc
+				# keep adding these up and when batch multiple hits
+				# then update in one
 
 
-
-
+				if episode_number % self.batch_size == 0:
+					# update weights
+					x = True
 
 
 #agent = PongAI()
