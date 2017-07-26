@@ -1,6 +1,5 @@
 import gym
 import numpy as np
-from math import sqrt
 import time
 """
 Using deep learning and policy gradients on Gym's game of Pong
@@ -72,8 +71,8 @@ class PongAI(object):
 		# weights for second layer
 		# 200 * 1
 		self.weights = {
-			'w1': np.random.randn(self.num_hidden_layer, self.image_dim) * sqrt(2.0/self.image_dim),
-			'w2': np.random.randn(self.num_hidden_layer) * sqrt(2.0/self.num_hidden_layer)
+			'w1': np.random.randn(self.num_hidden_layer, self.image_dim) * np.sqrt(2.0/self.image_dim),
+			'w2': np.random.randn(self.num_hidden_layer) * np.sqrt(2.0/self.num_hidden_layer)
 		}
 
 		# RMSprop inits. Used for optimizing gradient descent (http://ruder.io/optimizing-gradient-descent/index.html#rmsprop)
@@ -124,7 +123,7 @@ class PongAI(object):
 	
 	def choose_action(self, up_probability):
 
-		p = np.random.random()
+		p = np.random.uniform()
 
 		if p < up_probability:
 			return 2 # go up
@@ -221,12 +220,15 @@ class PongAI(object):
 		current_reward = None
 		prev_state = None
 		current_state = self.env.reset()
+		render_env = False
 
 		# Collecting data as episode proceeds
 		episode_hidden_layer_values, episode_observations, episode_gradient_log_ps, episode_rewards = [], [], [], []
 		
 		while True:
-			self.env.render();
+			
+			if render_env:
+				self.env.render();
 			nn_input_state, prev_state = self.preprocess(current_state, prev_state)
 
 			# keeping track of observations passed to NN
@@ -295,39 +297,25 @@ class PongAI(object):
 				# Sum the gradients and update at once when the batch hits
 				for layer in gradients:
 					self.g_dict[layer] += gradients[layer]
-				print("DONE")
+
+				# Minibatch Stochastic gradient descent
 				if episode_number % self.batch_size == 0:
 					self.update_weights()
 
 				# Reset everything for the next game
 				episode_hidden_layer_values, episode_observations, episode_gradient_log_ps, episode_rewards = [], [], [], []
-
+				current_reward = reward_sum if current_reward is None else current_reward * 0.99 + reward_sum * 0.01
+				print ('episode reward total was %f. running mean: %f' % (reward_sum, current_reward))
 				current_state = self.env.reset()
 				prev_state = None
-				#time.sleep(100)
+				reward_sum = 0
 
-#agent = PongAI()
+				# When running mean is greater than 17
+				# start to display pong screen
+				if current_reward > 17:
+					render_env = True
 
-def temp_sim():
-	env = gym.make('Pong-v0')
-
-	env.reset()
-
-	while True:
-		env.render()
-
-		state, reward, done, _ = env.step(env.action_space.sample())
-		if reward !=0:
-			print(reward);
-
-		if done:
-			print("done!!!!")
-			break;
-
-#temp_sim()
-
-p = PongAI()
-p.start_learning()
+PongAI().start_learning()
 
 
 
