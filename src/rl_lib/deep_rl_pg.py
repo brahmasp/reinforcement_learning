@@ -206,7 +206,9 @@ class PongAI(object):
 		for layer_name in self.weights:
 			self.expectation_g_squared[layer_name] = self.decay_rate * self.expectation_g_squared[layer_name] + (1 - self.decay_rate) * self.g_dict[layer_name] ** 2
 
-			# Update!!! Gradient ASCENT
+			# Update!!! Gradient ASCENT (based on policy gradients)
+			# ascent because based off of maximizing expected reward
+			# unlike otherwise where we are minimizing loss
 			self.weights[layer_name] = self.weights[layer_name] + (self.learning_rate) * self.g_dict[layer_name] / (np.sqrt(self.expectation_g_squared[layer_name] + epsilon))
 			# reset for next batch
 			self.g_dict[layer_name] = np.zeros_like(self.weights[layer_name])
