@@ -1,7 +1,7 @@
 import gym
 import numpy as np
 from math import sqrt
-
+import time
 """
 Using deep learning and policy gradients on Gym's game of Pong
 
@@ -56,7 +56,7 @@ class PongAI(object):
 		self.env = gym.make('Pong-v0')
 		self.image_dim = 80 * 80 # pre processed image size
 		self.num_hidden_layer = 200 # number of neurons in single hidden layer
-		self.batch_size = 10 # mini batch for stochastic gradient descent
+		self.batch_size = 1 # mini batch for stochastic gradient descent
 		self.gamma = 0.99 # discount factor for reward function
 		self.decay_rate = 0.99 # RMSprop decay rate, as per Hinton recommendation
 		self.learning_rate = 0.001 # alpha - during gradient descent, Hinton recommendation
@@ -73,7 +73,7 @@ class PongAI(object):
 		# 200 * 1
 		self.weights = {
 			'w1': np.random.randn(self.num_hidden_layer, self.image_dim) * sqrt(2.0/self.image_dim),
-			'w2': np.random.randn(self.num_hidden_layer, 1) * sqrt(2.0/self.num_hidden_layer)
+			'w2': np.random.randn(self.num_hidden_layer) * sqrt(2.0/self.num_hidden_layer)
 		}
 
 		# RMSprop inits. Used for optimizing gradient descent (http://ruder.io/optimizing-gradient-descent/index.html#rmsprop)
@@ -180,7 +180,7 @@ class PongAI(object):
 
 		# whole thing is basically (ignore bad notation)
 		# dL/w1 = dL/df * df/dRelu(f1) * dRelu(f1)/df1 * df1/d(wx) * d(wx)/dw1
-		delta_l2 = np.outer(episode_gradient_log_ps_discounted, self.weights['2']) # F * 200 matrix
+		delta_l2 = np.outer(episode_gradient_log_ps_discounted, self.weights['w2']) # F * 200 matrix
 		delta_l2[delta_l2 <= 0] = 0 # ReLU, equivalent to dRelu(f1)/df1 = 1 or 0 TODO - ??
 
 		# After getting till here, idea is that each gradient has to be multiplied with each
@@ -189,9 +189,13 @@ class PongAI(object):
 		# in other words dL1/dw1 + dL2/dw1, wrt is same but L1 is cost for first frame, L2 is for second
 		# This is similar to abaove idea of summing all gridients for minibatch SGD
 		dL_dw1 = np.dot(delta_l2.T, episode_observations) # the dwx/dw is just x (the input)
+
+		#print("shape of dw1 {}".format(np.shape(dL_dw1)))
+		#print("shape of dw2 {}".format(np.shape(dL_dw2)))
+		
 		return {
-			'1': dL_dw1,
-			'2': dL_dw2
+			'w1': dL_dw1,
+			'w2': dL_dw2
 		}
 
 	# Using RMSprop
@@ -204,7 +208,7 @@ class PongAI(object):
 			self.expectation_g_squared[layer_name] = self.decay_rate * self.expectation_g_squared[layer_name] + (1 - self.decay_rate) * self.g_dict[layer_name] ** 2
 
 			# Update!!! Gradient ASCENT
-			self.weights[layer_name] = self.weights[layer_name] + (self.learning_rate) * g_dict[layer_name] / (sqrt(expectation_g_squared[layer_name] + epsilon))
+			self.weights[layer_name] = self.weights[layer_name] + (self.learning_rate) * self.g_dict[layer_name] / (np.sqrt(self.expectation_g_squared[layer_name] + epsilon))
 			# reset for next batch
 			self.g_dict[layer_name] = np.zeros_like(self.weights[layer_name])
 
@@ -282,7 +286,7 @@ class PongAI(object):
 				# simply chaining the multiplication
 				# element wise multiplication
 				episode_gradient_log_ps_discounted = episode_gradient_log_ps * episode_discounted_rewards
-				gradients = compute_gradients(episode_gradient_log_ps_discounted, episode_hidden_layer_values, episode_observations)
+				gradients = self.compute_gradients(episode_gradient_log_ps_discounted, episode_hidden_layer_values, episode_observations)
 
 				# at this point we have computed gradient taking into account many frames
 				# to get the loss, rate of change etc
@@ -291,15 +295,16 @@ class PongAI(object):
 				# Sum the gradients and update at once when the batch hits
 				for layer in gradients:
 					self.g_dict[layer] += gradients[layer]
-
+				print("DONE")
 				if episode_number % self.batch_size == 0:
-					update_weights()
+					self.update_weights()
 
 				# Reset everything for the next game
 				episode_hidden_layer_values, episode_observations, episode_gradient_log_ps, episode_rewards = [], [], [], []
 
 				current_state = self.env.reset()
 				prev_state = None
+				#time.sleep(100)
 
 #agent = PongAI()
 
@@ -319,10 +324,10 @@ def temp_sim():
 			print("done!!!!")
 			break;
 
-temp_sim()
+#temp_sim()
 
-#p = PongAI()
-#p.start_learning()
+p = PongAI()
+p.start_learning()
 
 
 
