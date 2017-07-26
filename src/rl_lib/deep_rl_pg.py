@@ -58,8 +58,8 @@ class PongAI(object):
 		self.num_hidden_layer = 200 # number of neurons in single hidden layer
 		self.batch_size = 10 # mini batch for stochastic gradient descent
 		self.gamma = 0.99 # discount factor for reward function
-		self.decay_rate = 0.99 # RMSprop decay rate
-		self.learning_rate = 0.001 # alpha - during gradient descent
+		self.decay_rate = 0.99 # RMSprop decay rate, as per Hinton recommendation
+		self.learning_rate = 0.001 # alpha - during gradient descent, Hinton recommendation
 
 
 		# Xavier inits of weights
@@ -194,6 +194,19 @@ class PongAI(object):
 			'2': dL_dw2
 		}
 
+	# Using RMSprop
+	# Based on http://ruder.io/optimizing-gradient-descent/index.html#rmsprop
+	def update_weights(self):
+		epsilon = 1e-5
+
+		# Updating 1 layer at a time
+		for layer_name in self.weights:
+			self.expectation_g_squared[layer_name] = self.decay_rate * self.expectation_g_squared[layer_name] + (1 - self.decay_rate) * self.g_dict[layer_name] ** 2
+
+			# Update!!! Gradient ASCENT
+			self.weights[layer_name] = self.weights[layer_name] + (self.learning_rate) * g_dict[layer_name] / (sqrt(expectation_g_squared[layer_name] + epsilon))
+			# reset for next batch
+			self.g_dict[layer_name] = np.zeros_like(self.weights[layer_name])
 
 	 
 
@@ -275,12 +288,18 @@ class PongAI(object):
 				# to get the loss, rate of change etc
 				# keep adding these up and when batch multiple hits
 				# then update in one
-
+				# Sum the gradients and update at once when the batch hits
+				for layer in gradients:
+					self.g_dict[layer] += gradients[layer]
 
 				if episode_number % self.batch_size == 0:
-					# update weights
-					x = True
+					update_weights()
 
+				# Reset everything for the next game
+				episode_hidden_layer_values, episode_observations, episode_gradient_log_ps, episode_rewards = [], [], [], []
+
+				current_state = self.env.reset()
+				prev_state = None
 
 #agent = PongAI()
 
